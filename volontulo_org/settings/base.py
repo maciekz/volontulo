@@ -51,6 +51,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'bootstrap3',
     'cookielaw',
+    'rest_framework',
     'apps.volontulo',
 )
 

@@ -4,11 +4,13 @@ u"""
 .. module:: urls
 """
 
-from django.conf.urls import url
+from django.conf.urls import include, url
+from rest_framework import routers
 
 from apps.volontulo import views
-from apps.volontulo.views import auth as auth_views
 from apps.volontulo.views import admin_panel as admin_views
+from apps.volontulo.views import api as api_views
+from apps.volontulo.views import auth as auth_views
 from apps.volontulo.views import offers as offers_views
 from apps.volontulo.views import organizations as orgs_views
 from apps.volontulo.views import pages as pages_views
@@ -17,6 +19,11 @@ from apps.volontulo.views import pages as pages_views
 handler404 = 'apps.volontulo.views.page_not_found'
 handler500 = 'apps.volontulo.views.server_error'
 
+# Django REST framework
+router = routers.DefaultRouter()
+router.register(r'offers', api_views.OfferViewSet)
+router.register(r'organizations', api_views.OrganizationViewSet)
+router.register(r'users_profiles', api_views.UserProfileViewSet)
 
 urlpatterns = [  # pylint: disable=invalid-name
     # homepage:
@@ -176,4 +183,9 @@ urlpatterns = [  # pylint: disable=invalid-name
         views.newsletter_signup,
         name='newsletter_signup'
     ),
+
+    # api:
+    url(r'^api/', include(router.urls)),
+    url(r'^api-auth/', include('rest_framework.urls',
+                               namespace='rest_framework'))
 ]
