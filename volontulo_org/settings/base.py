@@ -52,6 +52,8 @@ INSTALLED_APPS = (
     'bootstrap3',
     'cookielaw',
     'rest_framework',
+    'rest_framework.authtoken',
+    'rest_auth',
     'apps.volontulo',
 )
 
@@ -137,3 +139,10 @@ MEDIA_URL = '/media/'
 
 # settings required if we want to use @login_required decorator
 LOGIN_URL = 'login'
+
+# Django REST framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    )
+}

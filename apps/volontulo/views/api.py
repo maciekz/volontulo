@@ -18,7 +18,7 @@ class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserProfileSerializer
 
 
-class OfferViewSet(viewsets.ModelViewSet):
+class OfferViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows Offers to be viewed or edited.
     """
