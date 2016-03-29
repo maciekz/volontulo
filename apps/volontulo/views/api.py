@@ -3,28 +3,24 @@
 u"""
 .. module:: api
 """
+from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import viewsets
 
 from apps.volontulo.models import Offer, Organization, UserProfile
 from apps.volontulo.serializers import (
-    OfferSerializer, OrganizationSerializer, UserProfileSerializer)
+    OfferSerializer, OfferCreateSerializer, OrganizationSerializer,
+    UserProfileSerializer)
 
 
-class UserOfferPermission(permissions.BasePermission):
+class OfferCreatePermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         """
-        All users can list and retrieve offers
-        but only authenticated users can create new ones.
+        Only authenticated users that are not admins can create new offers.
         """
-        if view.action in ('list', 'retrieve'):
-            return True
-        elif view.action == 'create':
-            return (request.user.is_authenticated() and
-                    not request.user.userprofile.is_administrator)
-        else:
-            return False
+        return (request.user.is_authenticated() and
+                not request.user.userprofile.is_administrator)
 
 
 class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
@@ -35,13 +31,18 @@ class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserProfileSerializer
 
 
-class OfferViewSet(viewsets.ModelViewSet):
+class OfferViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows Offers to be viewed or edited.
     """
     queryset = Offer.objects.all()
     serializer_class = OfferSerializer
-    permission_classes = (UserOfferPermission, )
+
+
+class OfferCreateView(generics.CreateAPIView):
+    queryset = Offer.objects.all()
+    serializer_class = OfferCreateSerializer
+    permission_classes = (OfferCreatePermission, )
 
 
 class OrganizationViewSet(viewsets.ReadOnlyModelViewSet):

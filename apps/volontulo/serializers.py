@@ -32,8 +32,8 @@ class UserProfileSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class OfferSerializer(serializers.HyperlinkedModelSerializer):
-    organization = OrganizationSerializer(many=False)
-    volunteers = UserSerializer(many=True)
+    organization = OrganizationSerializer(many=False, read_only=True)
+    volunteers = UserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Offer
@@ -48,3 +48,22 @@ class OfferSerializer(serializers.HyperlinkedModelSerializer):
             'action_start_date', 'action_end_date', 'volunteers_limit',
             'weight')
 
+
+class OfferCreateSerializer(serializers.HyperlinkedModelSerializer):
+    organization = serializers.PrimaryKeyRelatedField(
+        many=False, read_only=False, queryset=Organization.objects.all())
+    volunteers = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True)
+
+    class Meta:
+        model = Offer
+        fields = (
+            'url', 'id', 'organization', 'volunteers', 'description',
+            'requirements', 'time_commitment', 'benefits', 'location', 'title',
+            'started_at', 'finished_at', 'time_period', 'status_old',
+            'offer_status', 'recruitment_status', 'action_status', 'votes',
+            'recruitment_start_date', 'recruitment_end_date',
+            'reserve_recruitment', 'reserve_recruitment_start_date',
+            'reserve_recruitment_end_date', 'action_ongoing', 'constant_coop',
+            'action_start_date', 'action_end_date', 'volunteers_limit',
+            'weight')
