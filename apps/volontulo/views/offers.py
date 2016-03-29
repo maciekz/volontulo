@@ -34,6 +34,19 @@ def get_offers_list(request):
     return offers
 
 
+def offer_post_creation_actions(request, offer):
+    """
+    Actions run after an offer has been created
+    """
+    save_history(request, offer, action=ADDITION)
+    send_mail(
+        request,
+        'offer_creation',
+        ['administrators@volontuloapp.org'],
+        {'offer': offer}
+    )
+
+
 class OffersList(View):
     u"""View that handle list of offers."""
 
@@ -116,13 +129,7 @@ class OffersCreate(View):
             offer = form.save()
             offer.create_new()
             offer.save()
-            save_history(request, offer, action=ADDITION)
-            send_mail(
-                request,
-                'offer_creation',
-                ['administrators@volontuloapp.org'],
-                {'offer': offer}
-            )
+            offer_post_creation_actions(request, offer)
             messages.success(request, u"Dziękujemy za dodanie oferty.")
             return redirect(
                 'offers_view',

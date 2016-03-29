@@ -13,7 +13,8 @@ from apps.volontulo.models import Offer, Organization, UserProfile
 from apps.volontulo.serializers import (
     OfferSerializer, OfferCreateSerializer, OrganizationSerializer,
     UserProfileSerializer)
-from apps.volontulo.views.offers import get_offers_list
+from apps.volontulo.views.offers import (
+    get_offers_list, offer_post_creation_actions)
 
 
 class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
@@ -66,6 +67,8 @@ class OfferCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+        offer = serializer.save()
+        offer_post_creation_actions(request, offer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
