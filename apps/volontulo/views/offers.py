@@ -23,6 +23,17 @@ from apps.volontulo.utils import correct_slug, save_history
 from apps.volontulo.views import logged_as_admin
 
 
+def get_offers_list(request):
+    """
+    Show all offers to admins and only active offers to volunteers.
+    """
+    if logged_as_admin(request):
+        offers = Offer.objects.all()
+    else:
+        offers = Offer.objects.get_active()
+    return offers
+
+
 class OffersList(View):
     u"""View that handle list of offers."""
 
@@ -33,11 +44,7 @@ class OffersList(View):
 
         :param request: WSGIRequest instance
         """
-        if logged_as_admin(request):
-            offers = Offer.objects.all()
-        else:
-            offers = Offer.objects.get_active()
-
+        offers = get_offers_list(request)
         return render(request, "offers/offers_list.html", context={
             'offers': offers,
         })

@@ -5,22 +5,15 @@ u"""
 """
 from rest_framework import generics
 from rest_framework import permissions
+from rest_framework import status
 from rest_framework import viewsets
+from rest_framework.response import Response
 
 from apps.volontulo.models import Offer, Organization, UserProfile
 from apps.volontulo.serializers import (
     OfferSerializer, OfferCreateSerializer, OrganizationSerializer,
     UserProfileSerializer)
-
-
-class OfferCreatePermission(permissions.BasePermission):
-
-    def has_permission(self, request, view):
-        """
-        Only authenticated users that are not admins can create new offers.
-        """
-        return (request.user.is_authenticated() and
-                not request.user.userprofile.is_administrator)
+from apps.volontulo.views.offers import get_offers_list
 
 
 class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
@@ -38,11 +31,44 @@ class OfferViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Offer.objects.all()
     serializer_class = OfferSerializer
 
+    def list(self, request, *args, **kwargs):
+        queryset = get_offers_list(request)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 class OfferCreateView(generics.CreateAPIView):
     queryset = Offer.objects.all()
     serializer_class = OfferCreateSerializer
-    permission_classes = (OfferCreatePermission, )
+    permission_classes = (permissions.IsAuthenticated, )
+
+    def create(self, request, *args, **kwargs):
+        # Only authenticated users that are not admins can create new offers.
+        if request.user.userprofile.is_administrator:
+            data = {u'info':
+                    u"Administrator nie może tworzyć nowych ofert."}
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+        # You have to have at least a single organization
+        organizations = request.user.userprofile.organizations.all()
+        if not organizations.exists():
+            data = {u'info':
+                    u"Nie masz jeszcze żadnej założonej organizacji "
+                    u"na volontuloapp.org."}
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED,
+                        headers=headers)
 
 
 class OrganizationViewSet(viewsets.ReadOnlyModelViewSet):
