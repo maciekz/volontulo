@@ -6,7 +6,7 @@ u"""
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from apps.volontulo.models import Offer, Organization, UserProfile
+from apps.volontulo.models import Offer, OfferImage, Organization, UserProfile
 
 
 class OrganizationSerializer(serializers.HyperlinkedModelSerializer):
@@ -31,9 +31,17 @@ class UserProfileSerializer(serializers.HyperlinkedModelSerializer):
                   'phone_no')
 
 
+class OfferImageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OfferImage
+        fields = ('id', 'path', 'is_main')
+
+
 class OfferSerializer(serializers.HyperlinkedModelSerializer):
     organization = OrganizationSerializer(many=False, read_only=True)
     volunteers = UserSerializer(many=True, read_only=True)
+    images = OfferImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Offer
@@ -46,7 +54,7 @@ class OfferSerializer(serializers.HyperlinkedModelSerializer):
             'reserve_recruitment', 'reserve_recruitment_start_date',
             'reserve_recruitment_end_date', 'action_ongoing', 'constant_coop',
             'action_start_date', 'action_end_date', 'volunteers_limit',
-            'weight')
+            'weight', 'images')
 
 
 class OfferCreateSerializer(serializers.HyperlinkedModelSerializer):
