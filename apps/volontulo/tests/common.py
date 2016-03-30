@@ -169,3 +169,74 @@ def initialize_administrator(
     administrator_profile.is_administrator = True
     administrator_profile.save()
     return administrator1
+
+
+# pylint: disable=invalid-name
+def initialize_filled_and_empty_offers():
+    u"""Initialize offers."""
+    # create volunteer user
+    volunteer_user2 = User.objects.create_user(
+        'volunteer2@example.com',
+        'volunteer2@example.com',
+        'volunteer2'
+    )
+    volunteer_user2.save()
+    UserProfile.objects.create(user=volunteer_user2)
+
+    # create organization user to create offers
+    organization2 = Organization.objects.create(name=u'Organization 2')
+    organization2.save()
+    # this is required due to login to this user
+    organization_user2 = User.objects.create_user(
+        'organization2@example.com',
+        'organization2@example.com',
+        'organization2'
+    )
+    organization_user2.save()
+    organization_profile2 = UserProfile.objects.create(
+        user=organization_user2,
+    )
+    organization_profile2.organizations.add(organization2)
+
+    # create offer and assign volunteer to them
+    offer1 = Offer.objects.create(
+        title=u'Title 1',
+        description=u'Description 1',
+        requirements=u'Requirements 1',
+        time_commitment=u'Time commitment 1',
+        benefits=u'Benefits 1',
+        location=u'Location 1',
+        time_period=u'Time period 1',
+        status_old=u'ACTIVE',
+        votes=True,
+        started_at='2015-10-05 09:10:11',
+        finished_at='2015-12-12 12:13:14',
+        organization=organization2,
+        offer_status='published',
+        recruitment_status='open',
+        action_status='ongoing',
+    )
+    offer1.volunteers.add(volunteer_user2)
+    offer1.save()
+
+    # create offer without volunteers
+    offer2 = Offer.objects.create(
+        title=u'Title 2',
+        description=u'Description 2',
+        requirements=u'Requirements 2',
+        time_commitment=u'Time commitment 2',
+        benefits=u'Benefits 2',
+        location=u'Location 2',
+        time_period=u'Time period 2',
+        status_old=u'ACTIVE',
+        votes=True,
+        started_at='2015-10-05 09:10:11',
+        finished_at='2015-12-12 12:13:14',
+        organization=organization2,
+        offer_status='published',
+        recruitment_status='open',
+        action_status='ongoing',
+    )
+    offer2.save()
+
+    return offer1, offer2
