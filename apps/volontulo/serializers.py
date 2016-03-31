@@ -6,12 +6,12 @@ u"""
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from apps.volontulo.models import Offer, OfferImage, Organization, UserProfile
+from apps.volontulo import models
 
 
 class OrganizationSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = Organization
+        model = models.Organization
         fields = ('url', 'id', 'name', 'address', 'description')
 
 
@@ -21,20 +21,28 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'username', 'first_name', 'last_name', 'email')
 
 
+class UserGallerySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.UserGallery
+        fields = ('id', 'image', 'is_avatar')
+
+
 class UserProfileSerializer(serializers.HyperlinkedModelSerializer):
     user = UserSerializer(many=False)
     organizations = OrganizationSerializer(many=True)
+    images = UserGallerySerializer(many=True, read_only=True)
 
     class Meta:
-        model = UserProfile
+        model = models.UserProfile
         fields = ('url', 'id', 'user', 'organizations', 'is_administrator',
-                  'phone_no')
+                  'phone_no', 'images')
 
 
 class OfferImageSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = OfferImage
+        model = models.OfferImage
         fields = ('id', 'path', 'is_main')
 
 
@@ -44,7 +52,7 @@ class OfferSerializer(serializers.HyperlinkedModelSerializer):
     images = OfferImageSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Offer
+        model = models.Offer
         fields = (
             'url', 'id', 'organization', 'volunteers', 'description',
             'requirements', 'time_commitment', 'benefits', 'location', 'title',
@@ -59,12 +67,13 @@ class OfferSerializer(serializers.HyperlinkedModelSerializer):
 
 class OfferCreateSerializer(serializers.HyperlinkedModelSerializer):
     organization = serializers.PrimaryKeyRelatedField(
-        many=False, read_only=False, queryset=Organization.objects.all())
+        many=False, read_only=False,
+        queryset=models.Organization.objects.all())
     volunteers = serializers.PrimaryKeyRelatedField(
         many=True, read_only=True)
 
     class Meta:
-        model = Offer
+        model = models.Offer
         fields = (
             'url', 'id', 'organization', 'volunteers', 'description',
             'requirements', 'time_commitment', 'benefits', 'location', 'title',
