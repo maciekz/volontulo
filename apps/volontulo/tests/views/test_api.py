@@ -141,6 +141,7 @@ class TestUserProfilesApi(APITestCase):
         self.assertEqual(response['Content-Type'], 'application/json')
         expected_data = [
             {'id': 1,
+             'images': [],
              'is_administrator': False,
              'organizations': [],
              'phone_no': '',
@@ -151,6 +152,7 @@ class TestUserProfilesApi(APITestCase):
                       'last_name': '',
                       'username': 'volunteer2@example.com'}},
             {'id': 2,
+             'images': [],
              'is_administrator': False,
              'organizations': [
                  {'address': '',
@@ -166,6 +168,7 @@ class TestUserProfilesApi(APITestCase):
                       'last_name': '',
                       'username': 'organization2@example.com'}},
             {'id': 3,
+             'images': [],
              'is_administrator': True,
              'organizations': [],
              'phone_no': '',
@@ -186,6 +189,7 @@ class TestUserProfilesApi(APITestCase):
         self.assertEqual(response['Content-Type'], 'application/json')
         expected_data = {
             'id': 1,
+            'images': [],
             'is_administrator': False,
             'organizations': [],
             'phone_no': '',
@@ -206,6 +210,7 @@ class TestUserProfilesApi(APITestCase):
         self.assertEqual(response['Content-Type'], 'application/json')
         expected_data = {
             'id': 3,
+            'images': [],
             'is_administrator': True,
             'organizations': [],
             'phone_no': '',
@@ -315,6 +320,54 @@ class TestOffersApi(APITestCase):
              'volunteers_limit': 0,
              'votes': True,
              'weight': 0}]
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    def test__offers_list_for_user_id(self):
+        u"""Test getting offers list JSON for user."""
+        response = self.client.get('/api/offers.json?user_id=1')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateNotUsed(response)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = [
+            {'action_end_date': None,
+             'action_ongoing': False,
+             'action_start_date': None,
+             'action_status': 'ongoing',
+             'benefits': 'Benefits 1',
+             'constant_coop': False,
+             'description': 'Description 1',
+             'finished_at': '2015-12-12T12:13:14Z',
+             'id': 1,
+             'images': [],
+             'location': 'Location 1',
+             'offer_status': 'published',
+             'organization': {
+                 'address': '',
+                 'description': '',
+                 'id': 1,
+                 'name': 'Organization 2',
+                 'url': 'http://testserver/api/organizations/1.json'},
+             'recruitment_end_date': None,
+             'recruitment_start_date': None,
+             'recruitment_status': 'open',
+             'requirements': 'Requirements 1',
+             'reserve_recruitment': True,
+             'reserve_recruitment_end_date': None,
+             'reserve_recruitment_start_date': None,
+             'started_at': '2015-10-05T09:10:11Z',
+             'status_old': 'ACTIVE',
+             'time_commitment': 'Time commitment 1',
+             'time_period': 'Time period 1',
+             'title': 'Title 1',
+             'url': 'http://testserver/api/offers/1.json',
+             'volunteers': [{'email': 'volunteer2@example.com',
+                             'first_name': '',
+                             'id': 1,
+                             'last_name': '',
+                             'username': 'volunteer2@example.com'}],
+             'volunteers_limit': 0,
+             'votes': True,
+             'weight': 0}, ]
         self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
 
     # pylint: disable=invalid-name

@@ -34,6 +34,9 @@ class OfferViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = get_offers_list(request)
+        user_id = request.query_params.get('user_id', None)
+        if user_id is not None:
+            queryset = queryset.filter(volunteers__id=user_id)
 
         page = self.paginate_queryset(queryset)
         if page is not None:
