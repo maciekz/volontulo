@@ -17,6 +17,7 @@ from apps.volontulo.views.offers import (
     get_offers_list, offer_post_creation_actions)
 
 
+# pylint: disable=too-many-ancestors
 class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows UserProfiles to be viewed.
@@ -25,6 +26,7 @@ class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserProfileSerializer
 
 
+# pylint: disable=too-many-ancestors
 class OfferViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows Offers to be viewed.
@@ -80,6 +82,7 @@ class OfferCreateView(generics.CreateAPIView):
                         headers=headers)
 
 
+# pylint: disable=too-many-ancestors
 class OrganizationViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows Organizations to be viewed or edited.

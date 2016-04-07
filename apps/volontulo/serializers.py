@@ -10,25 +10,36 @@ from apps.volontulo import models
 
 
 class OrganizationSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serializer for the Organization model.
+    """
     class Meta:
         model = models.Organization
         fields = ('url', 'id', 'name', 'address', 'description')
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serializer for the User model.
+    """
     class Meta:
         model = User
         fields = ('id', 'username', 'first_name', 'last_name', 'email')
 
 
 class UserGallerySerializer(serializers.ModelSerializer):
-
+    """
+    Serializer for the UserGallery model.
+    """
     class Meta:
         model = models.UserGallery
         fields = ('id', 'image', 'is_avatar')
 
 
 class UserProfileSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serializer for the UserProfile model.
+    """
     user = UserSerializer(many=False)
     organizations = OrganizationSerializer(many=True)
     images = UserGallerySerializer(many=True, read_only=True)
@@ -47,6 +58,9 @@ class OfferImageSerializer(serializers.ModelSerializer):
 
 
 class OfferSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serializer for the Offer model.
+    """
     organization = OrganizationSerializer(many=False, read_only=True)
     volunteers = UserSerializer(many=True, read_only=True)
     images = OfferImageSerializer(many=True, read_only=True)
@@ -66,6 +80,9 @@ class OfferSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class OfferCreateSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serializer for creation of Offers.
+    """
     organization = serializers.PrimaryKeyRelatedField(
         many=False, read_only=False,
         queryset=models.Organization.objects.all())
