@@ -51,7 +51,9 @@ class UserProfileSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class OfferImageSerializer(serializers.ModelSerializer):
-
+    """
+    Serializer for the OfferImage model.
+    """
     class Meta:
         model = models.OfferImage
         fields = ('id', 'path', 'is_main')
