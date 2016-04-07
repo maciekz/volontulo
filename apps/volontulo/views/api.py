@@ -19,7 +19,7 @@ from apps.volontulo.views.offers import (
 
 class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API endpoint that allows UserProfiles to be viewed or edited.
+    API endpoint that allows UserProfiles to be viewed.
     """
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
@@ -27,7 +27,7 @@ class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
 
 class OfferViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API endpoint that allows Offers to be viewed or edited.
+    API endpoint that allows Offers to be viewed.
     """
     queryset = Offer.objects.all()
     serializer_class = OfferSerializer
@@ -48,6 +48,9 @@ class OfferViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class OfferCreateView(generics.CreateAPIView):
+    """
+    API endpoint that allows Offers to be created.
+    """
     queryset = Offer.objects.all()
     serializer_class = OfferCreateSerializer
     permission_classes = (permissions.IsAuthenticated, )

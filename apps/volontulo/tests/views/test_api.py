@@ -7,7 +7,6 @@ import json
 
 from rest_framework.test import APIClient, APITestCase
 
-from apps.volontulo.models import Organization
 from apps.volontulo.tests import common
 
 
