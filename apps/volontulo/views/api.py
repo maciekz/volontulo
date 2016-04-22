@@ -72,14 +72,35 @@ class OfferCreateView(generics.CreateAPIView):
                     u"na volontuloapp.org."}
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        offer = serializer.save()
-        offer_post_creation_actions(request, offer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED,
-                        headers=headers)
+        return super().create(request, *args, **kwargs)
+
+
+class OfferUpdateView(generics.UpdateAPIView):
+    """
+    API endpoint that allows Offers to be updated.
+    """
+    queryset = Offer.objects.all()
+    serializer_class = OfferCreateSerializer
+    permission_classes = (permissions.IsAuthenticated, )
+
+    def _check_perms(self, request, *args, **kwargs):
+        """
+        Check if user has permission to edit an offer.
+        """
+        try:
+            is_edit_allowed = request.user.userprofile.can_edit_offer(
+                offer_id=kwargs['pk'])
+        except Offer.DoesNotExist:
+            is_edit_allowed = False
+        return is_edit_allowed
+
+    def update(self, request, *args, **kwargs):
+        is_edit_allowed = self._check_perms(request, *args, **kwargs)
+        if not is_edit_allowed:
+            data = {u'info':
+                    u"Użytkownik nie może edytować wybranej oferty."}
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+        return super().update(request, *args, **kwargs)
 
 
 # pylint: disable=too-many-ancestors

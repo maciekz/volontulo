@@ -187,6 +187,8 @@ urlpatterns = [  # pylint: disable=invalid-name
     # api:
     url(r'^api/offers/create/', api_views.OfferCreateView.as_view(),
         name='offer-create'),
+    url(r'^api/offers/(?P<pk>[0-9]+)/update',
+        api_views.OfferUpdateView.as_view(), name='offer-update'),
     url(r'^api/', include(router.urls)),
     url(r'^rest-auth/', include('rest_auth.urls'))
 ]
