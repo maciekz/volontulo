@@ -225,16 +225,18 @@ class TestUserProfilesApi(APITestCase):
 class TestOffersApi(APITestCase):
     u"""Class responsible for testing offers specific API."""
 
-    @classmethod
-    def setUpTestData(cls):
-        u"""Data fixtures for all tests."""
-        # volunteer user - offers, organizations
-        cls.offer1, cls.offer2 = common.initialize_filled_and_empty_offers()
-        # admin user
-        cls.admin = common.initialize_administrator()
+    maxDiff = None
 
     def setUp(self):
         u"""Set up each test."""
+        # Data fixtures for all tests.
+        # volunteer user - offers, organizations
+        self.offer1, self.offer2 = common.initialize_filled_and_empty_offers()
+        # admin user
+        self.admin = common.initialize_administrator()
+        # empty user
+        common.initialize_empty_volunteer()
+        # API client
         self.client = APIClient()
 
     # pylint: disable=invalid-name
@@ -510,5 +512,293 @@ class TestOffersApi(APITestCase):
             'volunteers': [],
             'volunteers_limit': 0,
             'votes': False,
+            'weight': 0}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    # pylint: disable=invalid-name
+    def test__offer_full_edit_failure_anonymous(self):
+        u"""Test editing offer API (full) failure - not logged in."""
+        response = self.client.put(
+            '/api/offers/2/update/', {
+                'title': 'API created offer updated',
+                'time_commitment': 'API time commitment updated',
+                'benefits': 'API benefits updated',
+                'location': 'API location updated',
+                'description': 'API description updated',
+                'organization': '1',
+            })
+        self.assertEqual(response.status_code, 401)  # Unauthorized
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {'detail': 'Nie podano danych uwierzytelniających.'}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    # pylint: disable=invalid-name
+    def test__offer_partial_edit_failure_anonymous(self):
+        u"""Test editing offer API (partial) failure - not logged in."""
+        response = self.client.patch(
+            '/api/offers/2/update/', {
+                'title': 'API created offer updated',
+            })
+        self.assertEqual(response.status_code, 401)  # Unauthorized
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {'detail': 'Nie podano danych uwierzytelniających.'}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    # pylint: disable=invalid-name
+    def test__offer_full_edit_failure_wrong_user(self):
+        u"""Test editig offer API (full) failure - wrong user."""
+        # Log in
+        response = self.client.post(
+            '/rest-auth/login/', {'username': 'volunteer1@example.com',
+                                  'password': 'volunteer1'})
+        json_data = json.loads(response.content.decode('utf-8'))
+        # Use token
+        token = json_data['key']
+        # Create offer using token
+        response = self.client.put(
+            '/api/offers/2/update/', {
+                'title': 'API created offer updated',
+                'time_commitment': 'API time commitment updated',
+                'benefits': 'API benefits updated',
+                'location': 'API location updated',
+                'description': 'API description updated',
+                'organization': '1',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 404)  # Not Found
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            'info': 'Użytkownik nie może edytować wybranej oferty.'}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    # pylint: disable=invalid-name
+    def test__offer_partial_edit_failure_wrong_user(self):
+        u"""Test editig offer API (partial) failure - wrong user."""
+        # Log in
+        response = self.client.post(
+            '/rest-auth/login/', {'username': 'volunteer1@example.com',
+                                  'password': 'volunteer1'})
+        json_data = json.loads(response.content.decode('utf-8'))
+        # Use token
+        token = json_data['key']
+        # Create offer using token
+        response = self.client.patch(
+            '/api/offers/2/update/', {
+                'title': 'API created offer updated',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 404)  # Not Found
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            'info': 'Użytkownik nie może edytować wybranej oferty.'}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    # pylint: disable=invalid-name
+    def test__offer_full_edit_success_user(self):
+        u"""Test editing offer API (full) success - user."""
+        # Log in
+        response = self.client.post(
+            '/rest-auth/login/', {'username': 'organization2@example.com',
+                                  'password': 'organization2'})
+        json_data = json.loads(response.content.decode('utf-8'))
+        # Use token
+        token = json_data['key']
+        # Create offer using token
+        response = self.client.put(
+            '/api/offers/2/update/', {
+                'title': 'API edited offer updated',
+                'time_commitment': 'API time commitment updated',
+                'benefits': 'API benefits updated',
+                'location': 'API location updated',
+                'description': 'API description updated',
+                'organization': '1',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 200)  # OK
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            'action_end_date': None,
+            'action_ongoing': False,
+            'action_start_date': None,
+            'action_status': 'ongoing',
+            'benefits': 'API benefits updated',
+            'constant_coop': False,
+            'description': 'API description updated',
+            'finished_at': '2015-12-12T12:13:14Z',
+            'id': 2,
+            'location': 'API location updated',
+            'offer_status': 'unpublished',
+            'organization': 1,
+            'recruitment_end_date': None,
+            'recruitment_start_date': None,
+            'recruitment_status': 'open',
+            'requirements': 'Requirements 2',
+            'reserve_recruitment': False,
+            'reserve_recruitment_end_date': None,
+            'reserve_recruitment_start_date': None,
+            'started_at': '2015-10-05T09:10:11Z',
+            'status_old': 'ACTIVE',
+            'time_commitment': 'API time commitment updated',
+            'time_period': 'Time period 2',
+            'title': 'API edited offer updated',
+            'url': 'http://testserver/api/offers/2/',
+            'volunteers': [],
+            'volunteers_limit': 0,
+            'votes': False,
+            'weight': 0}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    def test__offer_partial_edit_success_user(self):
+        u"""Test editing offer API (partial) success - user."""
+        # Log in
+        response = self.client.post(
+            '/rest-auth/login/', {'username': 'organization2@example.com',
+                                  'password': 'organization2'})
+        json_data = json.loads(response.content.decode('utf-8'))
+        # Use token
+        token = json_data['key']
+        # Create offer using token
+        response = self.client.patch(
+            '/api/offers/2/update/', {
+                'title': 'API edited offer updated',
+                'location': 'API location updated',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 200)  # OK
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            'action_end_date': None,
+            'action_ongoing': False,
+            'action_start_date': None,
+            'action_status': 'ongoing',
+            'benefits': 'Benefits 2',
+            'constant_coop': False,
+            'description': 'Description 2',
+            'finished_at': '2015-12-12T12:13:14Z',
+            'id': 2,
+            'location': 'API location updated',
+            'offer_status': 'unpublished',
+            'organization': 1,
+            'recruitment_end_date': None,
+            'recruitment_start_date': None,
+            'recruitment_status': 'open',
+            'requirements': 'Requirements 2',
+            'reserve_recruitment': True,
+            'reserve_recruitment_end_date': None,
+            'reserve_recruitment_start_date': None,
+            'started_at': '2015-10-05T09:10:11Z',
+            'status_old': 'ACTIVE',
+            'time_commitment': 'Time commitment 2',
+            'time_period': 'Time period 2',
+            'title': 'API edited offer updated',
+            'url': 'http://testserver/api/offers/2/',
+            'volunteers': [],
+            'volunteers_limit': 0,
+            'votes': True,
+            'weight': 0}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    # pylint: disable=invalid-name
+    def test__offer_full_edit_success_admin(self):
+        u"""Test editing offer API (full) success - admin."""
+        # Log in
+        response = self.client.post(
+            '/rest-auth/login/', {'username': 'admin_user@example.com',
+                                  'password': 'admin_password'})
+        json_data = json.loads(response.content.decode('utf-8'))
+        # Use token
+        token = json_data['key']
+        # Create offer using token
+        response = self.client.put(
+            '/api/offers/2/update/', {
+                'title': 'API edited offer updated',
+                'time_commitment': 'API time commitment updated',
+                'benefits': 'API benefits updated',
+                'location': 'API location updated',
+                'description': 'API description updated',
+                'organization': '1',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 200)  # OK
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            'action_end_date': None,
+            'action_ongoing': False,
+            'action_start_date': None,
+            'action_status': 'ongoing',
+            'benefits': 'API benefits updated',
+            'constant_coop': False,
+            'description': 'API description updated',
+            'finished_at': '2015-12-12T12:13:14Z',
+            'id': 2,
+            'location': 'API location updated',
+            'offer_status': 'unpublished',
+            'organization': 1,
+            'recruitment_end_date': None,
+            'recruitment_start_date': None,
+            'recruitment_status': 'open',
+            'requirements': 'Requirements 2',
+            'reserve_recruitment': False,
+            'reserve_recruitment_end_date': None,
+            'reserve_recruitment_start_date': None,
+            'started_at': '2015-10-05T09:10:11Z',
+            'status_old': 'ACTIVE',
+            'time_commitment': 'API time commitment updated',
+            'time_period': 'Time period 2',
+            'title': 'API edited offer updated',
+            'url': 'http://testserver/api/offers/2/',
+            'volunteers': [],
+            'volunteers_limit': 0,
+            'votes': False,
+            'weight': 0}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    def test__offer_partial_edit_success_admin(self):
+        u"""Test editing offer API (partial) success - admin."""
+        # Log in
+        response = self.client.post(
+            '/rest-auth/login/', {'username': 'admin_user@example.com',
+                                  'password': 'admin_password'})
+        json_data = json.loads(response.content.decode('utf-8'))
+        # Use token
+        token = json_data['key']
+        # Create offer using token
+        response = self.client.patch(
+            '/api/offers/2/update/', {
+                'title': 'API edited offer updated',
+                'location': 'API location updated',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 200)  # OK
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            'action_end_date': None,
+            'action_ongoing': False,
+            'action_start_date': None,
+            'action_status': 'ongoing',
+            'benefits': 'Benefits 2',
+            'constant_coop': False,
+            'description': 'Description 2',
+            'finished_at': '2015-12-12T12:13:14Z',
+            'id': 2,
+            'location': 'API location updated',
+            'offer_status': 'unpublished',
+            'organization': 1,
+            'recruitment_end_date': None,
+            'recruitment_start_date': None,
+            'recruitment_status': 'open',
+            'requirements': 'Requirements 2',
+            'reserve_recruitment': True,
+            'reserve_recruitment_end_date': None,
+            'reserve_recruitment_start_date': None,
+            'started_at': '2015-10-05T09:10:11Z',
+            'status_old': 'ACTIVE',
+            'time_commitment': 'Time commitment 2',
+            'time_period': 'Time period 2',
+            'title': 'API edited offer updated',
+            'url': 'http://testserver/api/offers/2/',
+            'volunteers': [],
+            'volunteers_limit': 0,
+            'votes': True,
             'weight': 0}
         self.assertJSONEqual(response.content.decode('utf-8'), expected_data)

@@ -14,7 +14,8 @@ from apps.volontulo.serializers import (
     OfferSerializer, OfferCreateSerializer, OrganizationSerializer,
     UserProfileSerializer)
 from apps.volontulo.views.offers import (
-    get_offers_list, offer_post_creation_actions)
+    check_offer_edit_perms, get_offers_list, offer_post_creation_actions,
+    offer_post_edit_actions)
 
 
 # pylint: disable=too-many-ancestors
@@ -34,6 +35,7 @@ class OfferViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Offer.objects.all()
     serializer_class = OfferSerializer
 
+    # pylint: disable=unused-argument
     def list(self, request, *args, **kwargs):
         queryset = get_offers_list(request)
         user_id = request.query_params.get('user_id', None)
@@ -72,7 +74,16 @@ class OfferCreateView(generics.CreateAPIView):
                     u"na volontuloapp.org."}
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
-        return super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        offer = self.perform_create(serializer)
+        offer_post_creation_actions(request, offer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED,
+                        headers=headers)
+
+    def perform_create(self, serializer):
+        return serializer.save()
 
 
 class OfferUpdateView(generics.UpdateAPIView):
@@ -83,23 +94,15 @@ class OfferUpdateView(generics.UpdateAPIView):
     serializer_class = OfferCreateSerializer
     permission_classes = (permissions.IsAuthenticated, )
 
-    def _check_perms(self, request, *args, **kwargs):
-        """
-        Check if user has permission to edit an offer.
-        """
-        try:
-            is_edit_allowed = request.user.userprofile.can_edit_offer(
-                offer_id=kwargs['pk'])
-        except Offer.DoesNotExist:
-            is_edit_allowed = False
-        return is_edit_allowed
-
     def update(self, request, *args, **kwargs):
-        is_edit_allowed = self._check_perms(request, *args, **kwargs)
+        is_edit_allowed = check_offer_edit_perms(request, kwargs['pk'])
         if not is_edit_allowed:
             data = {u'info':
                     u"Użytkownik nie może edytować wybranej oferty."}
             return Response(data, status=status.HTTP_404_NOT_FOUND)
+        # Unpublish offer and save history
+        offer = Offer.objects.get(pk=kwargs['pk'])
+        offer_post_edit_actions(request, offer)
         return super().update(request, *args, **kwargs)
 
 

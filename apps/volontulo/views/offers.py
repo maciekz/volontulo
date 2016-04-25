@@ -34,6 +34,18 @@ def get_offers_list(request):
     return offers
 
 
+def check_offer_edit_perms(request, offer_id):
+    """
+    Check if user has permission to edit an offer.
+    """
+    try:
+        is_edit_allowed = request.user.userprofile.can_edit_offer(
+            offer_id=offer_id)
+    except Offer.DoesNotExist:
+        is_edit_allowed = False
+    return is_edit_allowed
+
+
 def offer_post_creation_actions(request, offer):
     """
     Actions run after an offer has been created
@@ -45,6 +57,14 @@ def offer_post_creation_actions(request, offer):
         ['administrators@volontuloapp.org'],
         {'offer': offer}
     )
+
+
+def offer_post_edit_actions(request, offer):
+    """
+    Actions run after an offer has been edited
+    """
+    offer.unpublish()
+    save_history(request, offer, action=CHANGE)
 
 
 class OffersList(View):
@@ -198,11 +218,7 @@ class OffersEdit(View):
     # pylint: disable=R0201
     def dispatch(self, request, *args, **kwargs):
         u"""Dispatch method overriden to check offer edit permission"""
-        try:
-            is_edit_allowed = request.user.userprofile.can_edit_offer(
-                offer_id=kwargs['id_'])
-        except Offer.DoesNotExist:
-            is_edit_allowed = False
+        is_edit_allowed = check_offer_edit_perms(request, kwargs['id_'])
         if not is_edit_allowed:
             raise Http404()
         return super().dispatch(request, *args, **kwargs)
@@ -289,9 +305,8 @@ class OffersEdit(View):
         form = CreateOfferForm(request.POST, instance=offer)
         if form.is_valid():
             offer = form.save()
-            offer.unpublish()
             offer.save()
-            save_history(request, offer, action=CHANGE)
+            offer_post_edit_actions(request, offer)
             messages.success(request, u"Oferta została zmieniona.")
         else:
             messages.error(
