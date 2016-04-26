@@ -554,7 +554,7 @@ class TestOffersApi(APITestCase):
         json_data = json.loads(response.content.decode('utf-8'))
         # Use token
         token = json_data['key']
-        # Create offer using token
+        # Edit offer using token
         response = self.client.put(
             '/api/offers/2/update/', {
                 'title': 'API created offer updated',
@@ -581,7 +581,7 @@ class TestOffersApi(APITestCase):
         json_data = json.loads(response.content.decode('utf-8'))
         # Use token
         token = json_data['key']
-        # Create offer using token
+        # Edit offer using token
         response = self.client.patch(
             '/api/offers/2/update/', {
                 'title': 'API created offer updated',
@@ -603,7 +603,7 @@ class TestOffersApi(APITestCase):
         json_data = json.loads(response.content.decode('utf-8'))
         # Use token
         token = json_data['key']
-        # Create offer using token
+        # Edit offer using token
         response = self.client.put(
             '/api/offers/2/update/', {
                 'title': 'API edited offer updated',
@@ -657,7 +657,7 @@ class TestOffersApi(APITestCase):
         json_data = json.loads(response.content.decode('utf-8'))
         # Use token
         token = json_data['key']
-        # Create offer using token
+        # Edit offer using token
         response = self.client.patch(
             '/api/offers/2/update/', {
                 'title': 'API edited offer updated',
@@ -708,7 +708,7 @@ class TestOffersApi(APITestCase):
         json_data = json.loads(response.content.decode('utf-8'))
         # Use token
         token = json_data['key']
-        # Create offer using token
+        # Edit offer using token
         response = self.client.put(
             '/api/offers/2/update/', {
                 'title': 'API edited offer updated',
@@ -762,7 +762,7 @@ class TestOffersApi(APITestCase):
         json_data = json.loads(response.content.decode('utf-8'))
         # Use token
         token = json_data['key']
-        # Create offer using token
+        # Edit offer using token
         response = self.client.patch(
             '/api/offers/2/update/', {
                 'title': 'API edited offer updated',
@@ -801,4 +801,105 @@ class TestOffersApi(APITestCase):
             'volunteers_limit': 0,
             'votes': True,
             'weight': 0}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    # pylint: disable=invalid-name
+    def test__offer_join_failure_anonymous(self):
+        u"""Test joining offer API failure - not logged in."""
+        response = self.client.post(
+            '/api/offers/2/join/', {
+                'email': 'organization2@example.com',
+                'phone_no': '123',
+                'fullname': 'Organization 2 User',
+                'comments': 'This is a comment',
+            })
+        self.assertEqual(response.status_code, 401)  # Unauthorized
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {'detail': 'Nie podano danych uwierzytelniających.'}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    def test__offer_join_failure_missing_data(self):
+        u"""Test joining offer API failure - missing data."""
+        # Log in
+        response = self.client.post(
+            '/rest-auth/login/', {'username': 'organization2@example.com',
+                                  'password': 'organization2'})
+        json_data = json.loads(response.content.decode('utf-8'))
+        # Use token
+        token = json_data['key']
+        # Join offer using token
+        response = self.client.post(
+            '/api/offers/2/join/', {
+                'email': 'organization2@example.com',
+                'fullname': 'Organization 2 User',
+                'comments': 'This is a comment',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 400)  # Bad Request
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            "phone_no": ["To pole jest wymagane."]
+        }
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    def test__offer_join_success(self):
+        u"""Test joining offer API success."""
+        # Log in
+        response = self.client.post(
+            '/rest-auth/login/', {'username': 'organization2@example.com',
+                                  'password': 'organization2'})
+        json_data = json.loads(response.content.decode('utf-8'))
+        # Use token
+        token = json_data['key']
+        # Join offer using token
+        response = self.client.post(
+            '/api/offers/2/join/', {
+                'email': 'organization2@example.com',
+                'phone_no': '123',
+                'fullname': 'Organization 2 User',
+                'comments': 'This is a comment',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 200)  # OK
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            'info': 'Zgłoszenie chęci uczestnictwa zostało wysłane.'}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    def test__offer_join_failure_already_applied(self):
+        u"""Test joining offer API failure - user already applied."""
+        # Log in
+        response = self.client.post(
+            '/rest-auth/login/', {'username': 'organization2@example.com',
+                                  'password': 'organization2'})
+        json_data = json.loads(response.content.decode('utf-8'))
+        # Use token
+        token = json_data['key']
+        # Join offer using token
+        response = self.client.post(
+            '/api/offers/2/join/', {
+                'email': 'organization2@example.com',
+                'phone_no': '123',
+                'fullname': 'Organization 2 User',
+                'comments': 'This is a comment',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 200)  # OK
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            'info': 'Zgłoszenie chęci uczestnictwa zostało wysłane.'}
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+        # Try to join again
+        response = self.client.post(
+            '/api/offers/2/join/', {
+                'email': 'organization2@example.com',
+                'phone_no': '123',
+                'fullname': 'Organization 2 User',
+                'comments': 'This is a comment',
+            },
+            HTTP_AUTHORIZATION='Token {0}'.format(token))
+        self.assertEqual(response.status_code, 400)  # Bad Request
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = {
+            'info': 'Już wyraziłeś chęć uczestnictwa w tej ofercie.'}
         self.assertJSONEqual(response.content.decode('utf-8'), expected_data)

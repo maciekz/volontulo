@@ -103,3 +103,14 @@ class OfferCreateSerializer(serializers.HyperlinkedModelSerializer):
             'reserve_recruitment_end_date', 'action_ongoing', 'constant_coop',
             'action_start_date', 'action_end_date', 'volunteers_limit',
             'weight')
+
+
+class OfferApplySerializer(serializers.Serializer):
+    """
+    Serializer for applying for join to offer.
+    """
+
+    email = serializers.CharField(max_length=80)
+    phone_no = serializers.CharField(max_length=80)
+    fullname = serializers.CharField(max_length=80)
+    comments = serializers.CharField(required=False)

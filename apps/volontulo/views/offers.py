@@ -67,6 +67,24 @@ def offer_post_edit_actions(request, offer):
     save_history(request, offer, action=CHANGE)
 
 
+def offer_post_join_actions(request, offer, user, data):
+    """
+    Actions run after an offer has been joined
+    """
+    send_mail(
+        request,
+        'offer_application',
+        [
+            user.email, data.get('email'),
+        ],
+        dict(
+            email=data.get('email'), phone_no=data.get('phone_no'),
+            fullname=data.get('fullname'), comments=data.get('comments'),
+            offer=offer,
+        )
+    )
+
+
 class OffersList(View):
     u"""View that handle list of offers."""
 
@@ -512,21 +530,7 @@ class OffersJoin(View):
             offer.volunteers.add(user)
             offer.save()
 
-            send_mail(
-                request,
-                'offer_application',
-                [
-                    user.email,
-                    request.POST.get('email'),
-                ],
-                dict(
-                    email=request.POST.get('email'),
-                    phone_no=request.POST.get('phone_no'),
-                    fullname=request.POST.get('fullname'),
-                    comments=request.POST.get('comments'),
-                    offer=offer,
-                )
-            )
+            offer_post_join_actions(request, offer, user, request.POST)
             messages.success(
                 request,
                 u'Zgłoszenie chęci uczestnictwa zostało wysłane.'

@@ -9,13 +9,14 @@ from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.response import Response
 
+from apps.volontulo.lib.email import send_mail
 from apps.volontulo.models import Offer, Organization, UserProfile
 from apps.volontulo.serializers import (
-    OfferSerializer, OfferCreateSerializer, OrganizationSerializer,
-    UserProfileSerializer)
+    OfferApplySerializer, OfferSerializer, OfferCreateSerializer,
+    OrganizationSerializer, UserProfileSerializer)
 from apps.volontulo.views.offers import (
     check_offer_edit_perms, get_offers_list, offer_post_creation_actions,
-    offer_post_edit_actions)
+    offer_post_edit_actions, offer_post_join_actions)
 
 
 # pylint: disable=too-many-ancestors
@@ -104,6 +105,42 @@ class OfferUpdateView(generics.UpdateAPIView):
         offer = Offer.objects.get(pk=kwargs['pk'])
         offer_post_edit_actions(request, offer)
         return super().update(request, *args, **kwargs)
+
+
+class OfferJoinView(generics.GenericAPIView):
+    """
+    API endpoint that allows Offers to be joined.
+    """
+    permission_classes = (permissions.IsAuthenticated, )
+
+    # pylint: disable=unused-argument
+    def post(self, request, *args, **kwargs):
+        # Check if data is valid
+        serializer = OfferApplySerializer(data=request.data)
+        serializer.is_valid()
+        if serializer.errors:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        # Check if user hasn't applied yet
+        id_ = kwargs['pk']
+        user = request.user
+        has_applied = Offer.objects.filter(
+            volunteers=user,
+            volunteers__offer=id_,
+        ).count()
+        if has_applied:
+            data = {u'info':
+                    u'Już wyraziłeś chęć uczestnictwa w tej ofercie.'}
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        # Add user to volunteers
+        offer = Offer.objects.get(id=id_)
+        offer.volunteers.add(user)
+        offer.save()
+        offer_post_join_actions(request, offer, user, request.data)
+
+        data = {u'info':
+                u'Zgłoszenie chęci uczestnictwa zostało wysłane.'}
+        return Response(data, status=status.HTTP_200_OK)
 
 
 # pylint: disable=too-many-ancestors
