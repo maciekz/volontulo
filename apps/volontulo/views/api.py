@@ -144,6 +144,29 @@ class OfferJoinView(generics.GenericAPIView):
 
 
 # pylint: disable=too-many-ancestors
+class UserCreatedOfferViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint that allows to view Offers created by user.
+    """
+    queryset = Offer.objects.all()
+    serializer_class = OfferSerializer
+
+    # pylint: disable=unused-argument
+    def list(self, request, *args, **kwargs):
+        creator_id = kwargs['pk']
+        queryset = Offer.objects.filter(
+            organization__userprofiles__user__id=creator_id)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+# pylint: disable=too-many-ancestors
 class OrganizationViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows Organizations to be viewed or edited.

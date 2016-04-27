@@ -903,3 +903,99 @@ class TestOffersApi(APITestCase):
         expected_data = {
             'info': 'Już wyraziłeś chęć uczestnictwa w tej ofercie.'}
         self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+
+class TestUserCreatedOffersApi(APITestCase):
+    u"""Class responsible for testing API for offers created by users."""
+
+    maxDiff = None
+
+    def setUp(self):
+        u"""Set up each test."""
+        self.client = APIClient()
+        # Data fixtures for all tests.
+        # volunteer user - offers, organizations
+        self.offer1, self.offer2 = common.initialize_filled_and_empty_offers()
+
+    # pylint: disable=invalid-name
+    def test__offers_list_for_user_id(self):
+        u"""Test getting offers list JSON for creator."""
+        response = self.client.get('/api/users/2/offers.json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateNotUsed(response)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = [
+            {'action_end_date': None,
+             'action_ongoing': False,
+             'action_start_date': None,
+             'action_status': 'ongoing',
+             'benefits': 'Benefits 1',
+             'constant_coop': False,
+             'description': 'Description 1',
+             'finished_at': '2015-12-12T12:13:14Z',
+             'id': 1,
+             'images': [],
+             'location': 'Location 1',
+             'offer_status': 'published',
+             'organization': {
+                 'address': '',
+                 'description': '',
+                 'id': 1,
+                 'name': 'Organization 2',
+                 'url': 'http://testserver/api/organizations/1/'},
+             'recruitment_end_date': None,
+             'recruitment_start_date': None,
+             'recruitment_status': 'open',
+             'requirements': 'Requirements 1',
+             'reserve_recruitment': True,
+             'reserve_recruitment_end_date': None,
+             'reserve_recruitment_start_date': None,
+             'started_at': '2015-10-05T09:10:11Z',
+             'status_old': 'ACTIVE',
+             'time_commitment': 'Time commitment 1',
+             'time_period': 'Time period 1',
+             'title': 'Title 1',
+             'url': 'http://testserver/api/offers/1/',
+             'volunteers': [{'email': 'volunteer2@example.com',
+                             'first_name': '',
+                             'id': 1,
+                             'last_name': '',
+                             'username': 'volunteer2@example.com'}],
+             'volunteers_limit': 0,
+             'votes': True,
+             'weight': 0},
+            {'action_end_date': None,
+             'action_ongoing': False,
+             'action_start_date': None,
+             'action_status': 'ongoing',
+             'benefits': 'Benefits 2',
+             'constant_coop': False,
+             'description': 'Description 2',
+             'finished_at': '2015-12-12T12:13:14Z',
+             'id': 2,
+             'images': [],
+             'location': 'Location 2',
+             'offer_status': 'published',
+             'organization': {'address': '',
+                              'description': '',
+                              'id': 1,
+                              'name': 'Organization 2',
+                              'url': 'http://testserver/api/organizations/1/'},
+             'recruitment_end_date': None,
+             'recruitment_start_date': None,
+             'recruitment_status': 'open',
+             'requirements': 'Requirements 2',
+             'reserve_recruitment': True,
+             'reserve_recruitment_end_date': None,
+             'reserve_recruitment_start_date': None,
+             'started_at': '2015-10-05T09:10:11Z',
+             'status_old': 'ACTIVE',
+             'time_commitment': 'Time commitment 2',
+             'time_period': 'Time period 2',
+             'title': 'Title 2',
+             'url': 'http://testserver/api/offers/2/',
+             'volunteers': [],
+             'volunteers_limit': 0,
+             'votes': True,
+             'weight': 0}]
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
