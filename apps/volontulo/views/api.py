@@ -36,21 +36,6 @@ class OfferViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Offer.objects.all()
     serializer_class = OfferSerializer
 
-    # pylint: disable=unused-argument
-    def list(self, request, *args, **kwargs):
-        queryset = get_offers_list(request)
-        user_id = request.query_params.get('user_id', None)
-        if user_id is not None:
-            queryset = queryset.filter(volunteers__id=user_id)
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
 
 class OfferCreateView(generics.CreateAPIView):
     """
@@ -156,6 +141,30 @@ class UserCreatedOfferViewSet(viewsets.ReadOnlyModelViewSet):
         creator_id = kwargs['pk']
         queryset = Offer.objects.filter(
             organization__userprofiles__user__id=creator_id)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+# pylint: disable=too-many-ancestors
+class UserJoinedOfferViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint that allows to view Offers joined by user.
+    """
+    queryset = Offer.objects.all()
+    serializer_class = OfferSerializer
+
+    # pylint: disable=unused-argument
+    def list(self, request, *args, **kwargs):
+        queryset = get_offers_list(request)
+        user_id = kwargs['pk']
+        if user_id is not None:
+            queryset = queryset.filter(volunteers__id=user_id)
 
         page = self.paginate_queryset(queryset)
         if page is not None:
