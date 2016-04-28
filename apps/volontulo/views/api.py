@@ -3,17 +3,17 @@
 u"""
 .. module:: api
 """
+from django.contrib.auth.models import User
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.response import Response
 
+from apps.volontulo import serializers
 from apps.volontulo.lib.email import send_mail
 from apps.volontulo.models import Offer, Organization, UserProfile
-from apps.volontulo.serializers import (
-    OfferApplySerializer, OfferSerializer, OfferCreateSerializer,
-    OrganizationSerializer, UserProfileSerializer)
+
 from apps.volontulo.views.offers import (
     check_offer_edit_perms, get_offers_list, offer_post_creation_actions,
     offer_post_edit_actions, offer_post_join_actions)
@@ -25,7 +25,7 @@ class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint that allows UserProfiles to be viewed.
     """
     queryset = UserProfile.objects.all()
-    serializer_class = UserProfileSerializer
+    serializer_class = serializers.UserProfileSerializer
 
 
 # pylint: disable=too-many-ancestors
@@ -34,7 +34,7 @@ class OfferViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint that allows Offers to be viewed.
     """
     queryset = Offer.objects.all()
-    serializer_class = OfferSerializer
+    serializer_class = serializers.OfferSerializer
 
 
 class OfferCreateView(generics.CreateAPIView):
@@ -42,7 +42,7 @@ class OfferCreateView(generics.CreateAPIView):
     API endpoint that allows Offers to be created.
     """
     queryset = Offer.objects.all()
-    serializer_class = OfferCreateSerializer
+    serializer_class = serializers.OfferCreateSerializer
     permission_classes = (permissions.IsAuthenticated, )
 
     def create(self, request, *args, **kwargs):
@@ -77,7 +77,7 @@ class OfferUpdateView(generics.UpdateAPIView):
     API endpoint that allows Offers to be updated.
     """
     queryset = Offer.objects.all()
-    serializer_class = OfferCreateSerializer
+    serializer_class = serializers.OfferCreateSerializer
     permission_classes = (permissions.IsAuthenticated, )
 
     def update(self, request, *args, **kwargs):
@@ -101,7 +101,7 @@ class OfferJoinView(generics.GenericAPIView):
     # pylint: disable=unused-argument
     def post(self, request, *args, **kwargs):
         # Check if data is valid
-        serializer = OfferApplySerializer(data=request.data)
+        serializer = serializers.OfferApplySerializer(data=request.data)
         serializer.is_valid()
         if serializer.errors:
             return Response(serializer.errors,
@@ -134,7 +134,7 @@ class UserCreatedOfferViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint that allows to view Offers created by user.
     """
     queryset = Offer.objects.all()
-    serializer_class = OfferSerializer
+    serializer_class = serializers.OfferSerializer
 
     # pylint: disable=unused-argument
     def list(self, request, *args, **kwargs):
@@ -157,7 +157,7 @@ class UserJoinedOfferViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint that allows to view Offers joined by user.
     """
     queryset = Offer.objects.all()
-    serializer_class = OfferSerializer
+    serializer_class = serializers.OfferSerializer
 
     # pylint: disable=unused-argument
     def list(self, request, *args, **kwargs):
@@ -181,4 +181,26 @@ class OrganizationViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint that allows Organizations to be viewed or edited.
     """
     queryset = Organization.objects.all()
-    serializer_class = OrganizationSerializer
+    serializer_class = serializers.OrganizationSerializer
+
+
+class OrganizationUsersViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint that allows UserProfiles to be viewed.
+    """
+    queryset = UserProfile.objects.all()
+    serializer_class = serializers.UserProfileSerializer
+
+    # pylint: disable=unused-argument
+    def list(self, request, *args, **kwargs):
+        organization_id = kwargs['pk']
+        queryset = UserProfile.objects.filter(
+            organizations__id=organization_id)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

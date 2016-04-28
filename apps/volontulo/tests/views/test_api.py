@@ -1013,3 +1013,55 @@ class TestUserJoinedOffersApi(APITestCase):
              'votes': True,
              'weight': 0}, ]
         self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+
+class TestOrganizationUsersApi(APITestCase):
+    u"""Class responsible for testing organization's user profiles API."""
+
+    maxDiff = None
+
+    @classmethod
+    def setUpTestData(cls):
+        # volunteer user - offers, organizations
+        cls.volunteer2, cls.organization2 = \
+            common.initialize_filled_volunteer_and_organization()
+
+    def setUp(self):
+        u"""Set up each test."""
+        self.client = APIClient()
+
+    # pylint: disable=invalid-name
+    def test__organization_users_list(self):
+        u"""Test getting organization's users list JSON."""
+        response = self.client.get('/api/organizations/1/users')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateNotUsed(response)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = [
+            {'id': 2,
+             'images': [],
+             'is_administrator': False,
+             'organizations': [
+                 {'address': '',
+                  'description': '',
+                  'id': 1,
+                  'name': 'Organization 2',
+                  'url': 'http://testserver/api/organizations/1/'}],
+             'phone_no': '',
+             'url': 'http://testserver/api/users_profiles/2/',
+             'user': {'email': 'organization2@example.com',
+                      'first_name': '',
+                      'id': 2,
+                      'last_name': '',
+                      'username': 'organization2@example.com'}}, ]
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)
+
+    # pylint: disable=invalid-name
+    def test__organization_empty_users_list(self):
+        u"""Test getting organization's empty users list JSON."""
+        response = self.client.get('/api/organizations/2/users')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateNotUsed(response)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        expected_data = []
+        self.assertJSONEqual(response.content.decode('utf-8'), expected_data)

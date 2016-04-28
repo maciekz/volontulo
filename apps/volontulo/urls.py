@@ -197,6 +197,9 @@ urlpatterns = [  # pylint: disable=invalid-name
     url(r'api/users/(?P<pk>[0-9]+)/attend',
         api_views.UserJoinedOfferViewSet.as_view({'get': 'list'}),
         name='user-attended-offers'),
+    url(r'api/organizations/(?P<pk>[0-9]+)/users',
+        api_views.OrganizationUsersViewSet.as_view({'get': 'list'}),
+        name='organization-users'),
     url(r'^api/', include(router.urls)),
     url(r'^rest-auth/', include('rest_auth.urls'))
 ]
